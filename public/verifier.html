@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Amani Africa — Verifier Console</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="console">
+    <header class="console-header">
+      <a href="index.html" class="back">←</a>
+      <div>
+        <div class="phone-title">Amani Africa</div>
+        <div class="phone-subtitle">Verifier Console</div>
+      </div>
+    </header>
+
+    <div id="map"></div>
+
+    <section class="panel">
+      <h2>Markets</h2>
+      <div id="marketList" class="market-list"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Post a fact-check</h2>
+      <form id="factCheckForm" class="form-grid">
+        <label>Market
+          <select id="fcMarket" required></select>
+        </label>
+        <label>Rumor / claim
+          <input type="text" id="fcClaim" placeholder="e.g. Police have blocked the main gate" required />
+        </label>
+        <label>Verdict
+          <select id="fcVerdict" required>
+            <option value="false">False</option>
+            <option value="true">True</option>
+            <option value="unverified">Unverified</option>
+          </select>
+        </label>
+        <label>Explanation
+          <input type="text" id="fcExplanation" placeholder="What did you confirm, and how?" required />
+        </label>
+        <button type="submit">Post fact-check</button>
+      </form>
+      <div id="factCheckList" class="fact-list"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Pending vouch requests</h2>
+      <div id="traderList" class="trader-list"></div>
+    </section>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/verifier.js"></script>
+</body>
+</html>

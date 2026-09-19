@@ -38,17 +38,22 @@ async function classifyIntent(text) {
         "PROTECTION - asking to be connected to a peace-committee / protection contact because they feel at risk",
         "FACTCHECK - asking about a rumor or wanting the latest verified fact-check",
         "STATUS - asking about the status of a report or protection request they already made",
+        "SUBSCRIBE - asking to get alerts, notifications, or updates for an area",
+        "UNSUBSCRIBE - asking to stop getting alerts for an area",
         "MENU - anything else, greetings, or unclear",
       ].join("\n");
       const reply = await callClaude(system, text);
-      const intent = reply.toUpperCase().match(/SAFETY|REPORT|PROTECTION|FACTCHECK|STATUS|MENU/)?.[0];
+      const intent = reply.toUpperCase().match(/SAFETY|REPORT|PROTECTION|FACTCHECK|STATUS|UNSUBSCRIBE|SUBSCRIBE|MENU/)?.[0];
       if (intent) return intent;
     } catch (err) {
       console.error("[ai] classifyIntent fallback due to error:", err.message);
     }
   }
 
-  // Keyword fallback - always available, no API key required.
+  // Keyword fallback - always available, no API key required. Order matters:
+  // "unsubscribe" must be checked before "subscribe" since it contains that substring.
+  if (/unsubscribe|stop.*alert|no more alert/.test(lower)) return "UNSUBSCRIBE";
+  if (/subscribe|alert me|notify me|follow this area|get alerts/.test(lower)) return "SUBSCRIBE";
   if (/report|gathering|crowd|mob|targeted|attack|being attacked/.test(lower)) return "REPORT";
   if (/protect|at risk|unsafe for me|feel unsafe|help me/.test(lower)) return "PROTECTION";
   if (/rumor|rumour|fact.?check|true or false|heard that/.test(lower)) return "FACTCHECK";

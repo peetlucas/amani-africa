@@ -58,4 +58,7 @@ const Api = {
       body: JSON.stringify({ from, body }),
     })).json();
   },
+  async getBroadcasts() {
+    return (await fetch("/api/broadcasts")).json();
+  },
 };

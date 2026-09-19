@@ -20,10 +20,12 @@ const REPORT_CATEGORIES = ["rumor", "gathering", "business_targeted", "attack_in
 const protectionRequests = [];
 const factChecks = [];
 const reports = [];
+const subscriptions = [];
 
 let nextProtectionId = 1;
 let nextFactCheckId = 1;
 let nextReportId = 1;
+let nextSubscriptionId = 1;
 
 function getRegions() {
   return regions;
@@ -139,6 +141,38 @@ function findProtectionByContact(contact) {
   return protectionRequests.filter((p) => p.contact === contact);
 }
 
+// ---------- Subscriptions: opt-in proactive alerts for an area ----------
+// This is what makes an escalation or a fact-check reach people who never thought to ask.
+
+function subscribe({ contact, regionId }) {
+  const region = getRegion(regionId);
+  if (!region || !contact) return null;
+  const existing = subscriptions.find((s) => s.contact === contact && s.regionId === regionId);
+  if (existing) return existing;
+  const entry = { id: nextSubscriptionId++, contact, regionId, createdAt: Date.now() };
+  subscriptions.push(entry);
+  return entry;
+}
+
+function unsubscribe(contact, regionId) {
+  const idx = subscriptions.findIndex((s) => s.contact === contact && s.regionId === regionId);
+  if (idx === -1) return false;
+  subscriptions.splice(idx, 1);
+  return true;
+}
+
+function getSubscribers(regionId) {
+  return subscriptions.filter((s) => s.regionId === regionId);
+}
+
+function getSubscriberCount(regionId) {
+  return subscriptions.filter((s) => s.regionId === regionId).length;
+}
+
+function getSubscriptionsByContact(contact) {
+  return subscriptions.filter((s) => s.contact === contact);
+}
+
 module.exports = {
   TENSION_LEVELS,
   REPORT_CATEGORIES,
@@ -155,4 +189,9 @@ module.exports = {
   connectProtection,
   getProtectionRequests,
   findProtectionByContact,
+  subscribe,
+  unsubscribe,
+  getSubscribers,
+  getSubscriberCount,
+  getSubscriptionsByContact,
 };

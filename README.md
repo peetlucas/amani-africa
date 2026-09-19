@@ -19,10 +19,12 @@ Attacks on people or businesses tied to nationality rarely start as violence —
 
 A single backend serves two views of the same live data:
 
-- **Community Assistant** — a WhatsApp-style chat (quick-reply buttons, minimal typing) where anyone can ask "Is this area calm today?", confidentially report a rumor/gathering/targeted business/attack in progress (with an optional photo or video attached as evidence), request a protection contact, or check the latest verified fact-check.
-- **Verifier Console** — a dashboard with a live map of all areas color-coded **Green / Amber / Red**, an incoming-reports queue, a fact-check form (which can be pre-filled directly from a report), and a protection-request queue.
+- **Community Assistant** — a WhatsApp-style chat (quick-reply buttons, minimal typing) where anyone can ask "Is this area calm today?", confidentially report a rumor/gathering/targeted business/attack in progress (with an optional photo or video attached as evidence), request a protection contact, subscribe to alerts for an area, or check the latest verified fact-check.
+- **Verifier Console** — a dashboard with a live map of all areas color-coded **Green / Amber / Red**, an incoming-reports queue, a fact-check form (which can be pre-filled directly from a report), a protection-request queue, subscriber counts per area, and a log of every alert sent.
 
 Because both views share the same backend, a report submitted anonymously in the Community Assistant appears immediately in the Verifier Console, and a tension-level change or fact-check posted by a verifier is reflected immediately back in the Community Assistant and on the map — that live loop (report → verify → debunk/confirm → area sees the result) is the core proof-of-concept moment, and it's the same loop that would need to run in minutes, not hours, to actually prevent an escalation.
+
+**Checking is pull, alerts are push.** Asking "Is it calm here today?" only helps someone who thinks to ask. The part that actually reaches people who don't is subscriptions: anyone can subscribe to an area once (say "subscribe Eastleigh," or tap "Get alerts for this area"), and from then on every tension change and every fact-check for that area is pushed to them automatically over WhatsApp (`broadcast.js`) — no one has to ask first.
 
 The same message-handling logic (`whatsapp.js`) powers both the in-browser Community Assistant simulator **and** a real WhatsApp number via Twilio's free Sandbox, so the "channel people already use" claim is a real, working integration, not a mockup.
 
@@ -36,6 +38,7 @@ These aren't afterthoughts — they were the main design constraint once the tar
 - **Verifier pool must be cross-community by design** (documented above) — a single-community verifier set can be captured by the same narrative the tool exists to counter.
 - **Fact-checks always carry a claim, verdict, and explanation** — never just a status — so a debunked rumor visibly loses to a stated reason, not just an authority's say-so.
 - **Attachments are optional evidence, never required.** A reporter can attach a photo or video (web form, or a real photo sent over WhatsApp) so a verifier has something concrete to check against, but the flow works the same without one - most reports won't have media, and that's fine.
+- **Alerts are opt-in per area, never assumed.** Subscribing is a deliberate action; nobody is auto-enrolled, and unsubscribing is a single message.
 
 This is a proof of concept: in a real deployment, verifier identity would be authenticated, verifier composition would be enforced (not just documented), and all actions would carry an audit trail.
 
@@ -77,6 +80,9 @@ Then open:
 3. Install [ngrok](https://ngrok.com/) and run `ngrok http 3000` to get a public HTTPS URL for your local server.
 4. In the Twilio Sandbox settings, set "When a message comes in" to `https://<your-ngrok-url>/webhook/whatsapp` (HTTP POST).
 5. Message the sandbox number from your phone — e.g. "Is Eastleigh calm today?" — and you'll get a real reply from your local server.
+6. To see a real proactive alert, message "subscribe Eastleigh" from your phone, then (from the Verifier Console, or another terminal) raise Eastleigh's tension or post a fact-check — your phone should receive an unprompted WhatsApp message.
+
+**Production note on proactive alerts**: the Twilio Sandbox can only message numbers that have joined it, and WhatsApp's own rules require a pre-approved message template for messages sent outside a 24-hour reply window. `broadcast.js` sends for real through Twilio when `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN` are set, and otherwise logs a `[broadcast:simulated]` line and records it in the Verifier Console's "Recent alerts sent" panel — so the mechanism is fully demonstrable without a Twilio account, and a judge or teammate without Twilio credentials still sees exactly what would have been sent, to whom, and how many people.
 
 ## Project structure
 
@@ -84,7 +90,8 @@ Then open:
 server.js         Express app: REST API + WhatsApp webhook
 whatsapp.js        Shared bot logic (used by both the webhook and the web simulator)
 ai.js              Claude API integration + keyword fallback
-store.js           In-memory data store (regions, fact-checks, reports, protection requests)
+broadcast.js       Proactive WhatsApp alerts (real via Twilio, or simulated + logged)
+store.js           In-memory data store (regions, fact-checks, reports, protection requests, subscriptions)
 uploads/           Report photo/video attachments (created at runtime, not committed)
 public/            Landing page, Community Assistant, Verifier Console, map, styles
 ```

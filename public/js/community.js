@@ -95,6 +95,7 @@ async function init() {
       "is-safe": `Is ${currentRegion.name} calm today?`,
       protect: "Protect me, I feel at risk",
       factcheck: `What's the latest fact-check for ${currentRegion.name}?`,
+      subscribe: `Subscribe ${currentRegion.name}`,
       status: "status",
     };
     send(map[kind]);

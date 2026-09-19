@@ -34,6 +34,7 @@ async function handleIncomingMessage({ from, body, mediaUrl, mediaType }) {
         reply += `\n\nLatest verified update: "${latest.claim}" -> ${latest.verdict.toUpperCase()}\n${latest.explanation}`;
       }
       reply += "\n\nIf you see something concerning, reply \"report\" to flag it - your identity is never shared.";
+      reply += `\nWant to be told automatically if this changes? Reply "subscribe ${region.name}".`;
       return reply;
     }
 
@@ -78,13 +79,36 @@ async function handleIncomingMessage({ from, body, mediaUrl, mediaType }) {
     case "STATUS": {
       const myReports = store.getReports().filter((r) => r.contact === from);
       const myRequests = store.findProtectionByContact(from);
-      if (myReports.length === 0 && myRequests.length === 0) {
-        return "You don't have any reports or protection requests on file. Reply \"report\" to flag a concern, or \"protect me\" if you feel at risk.";
+      const mySubs = store.getSubscriptionsByContact(from);
+      if (myReports.length === 0 && myRequests.length === 0 && mySubs.length === 0) {
+        return "You don't have any reports, protection requests, or alert subscriptions on file. Reply \"report\" to flag a concern, \"protect me\" if you feel at risk, or \"subscribe <area>\" for alerts.";
       }
       const lines = [];
       myReports.forEach((r) => lines.push(`Report (${r.category.replace("_", " ")}): ${r.status.toUpperCase()}`));
       myRequests.forEach((p) => lines.push(`Protection request: ${p.status.toUpperCase()}`));
+      if (mySubs.length > 0) {
+        const names = mySubs.map((s) => store.getRegion(s.regionId)?.name).filter(Boolean).join(", ");
+        lines.push(`Subscribed to alerts for: ${names}`);
+      }
       return lines.join("\n");
+    }
+
+    case "SUBSCRIBE": {
+      if (!region) {
+        return listRegionsPrompt(regions, "Which area do you want alerts for? Reply \"subscribe <area>\", e.g. \"Subscribe Eastleigh\".");
+      }
+      store.subscribe({ contact: from, regionId: region.id });
+      return `You're now subscribed to alerts for ${region.name}, ${region.city}. We'll message you the moment a verifier changes its status or posts a fact-check - you won't need to ask. Reply "unsubscribe ${region.name}" any time to stop.`;
+    }
+
+    case "UNSUBSCRIBE": {
+      if (!region) {
+        return listRegionsPrompt(regions, "Which area should we stop alerting you about? Reply \"unsubscribe <area>\".");
+      }
+      const removed = store.unsubscribe(from, region.id);
+      return removed
+        ? `You've been unsubscribed from alerts for ${region.name}.`
+        : `You weren't subscribed to ${region.name}, so there's nothing to remove.`;
     }
 
     default:
@@ -95,7 +119,8 @@ async function handleIncomingMessage({ from, body, mediaUrl, mediaType }) {
         "- \"Report <area>: <what you're seeing>\"",
         "- \"Protect me\" to request a peace-committee contact",
         "- \"What's the latest fact-check?\"",
-        "- \"status\" to check a report or request you already made",
+        "- \"Subscribe <area>\" to get alerted automatically, without asking",
+        "- \"status\" to check a report, request, or subscription you already made",
       ].join("\n");
   }
 }

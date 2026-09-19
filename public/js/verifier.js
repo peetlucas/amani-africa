@@ -39,7 +39,7 @@ async function renderRegions() {
     <div class="market-row" data-id="${r.id}">
       <div>
         <div class="name"><span class="tension-dot ${r.tension}"></span>${r.name}</div>
-        <div class="city">${r.city}, ${r.country} — ${r.type}</div>
+        <div class="city">${r.city}, ${r.country} — ${r.type} &middot; ${r.subscriberCount || 0} subscribed to alerts</div>
       </div>
       <div class="tension-buttons">
         ${TENSION_LEVELS.map((lvl) => `<button data-level="${lvl}" class="${lvl === r.tension ? `active ${lvl}` : ""}">${lvl}</button>`).join("")}
@@ -177,6 +177,26 @@ async function renderProtection(regions) {
   });
 }
 
+async function renderBroadcasts() {
+  const list = await Api.getBroadcasts();
+  const el = document.getElementById("broadcastList");
+
+  if (list.length === 0) {
+    el.innerHTML = `<div class="empty-state">No alerts sent yet - they go out automatically when tension changes or a fact-check is posted.</div>`;
+    return;
+  }
+
+  el.innerHTML = list.slice(0, 8).map((b) => `
+    <div class="report-item">
+      <div class="report-header">
+        <b>${b.regionName}</b>
+        <span class="category-badge ${b.recipientCount > 0 ? "business_targeted" : "other"}">${b.recipientCount} recipient${b.recipientCount === 1 ? "" : "s"}${b.simulated ? " (simulated)" : ""}</span>
+      </div>
+      <div class="report-desc">${b.message}</div>
+    </div>
+  `).join("");
+}
+
 document.getElementById("factCheckForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const claimField = document.getElementById("fcClaim");
@@ -194,7 +214,7 @@ document.getElementById("factCheckForm").addEventListener("submit", async (e) =>
 
 async function refreshAll() {
   const regions = await renderRegions();
-  await Promise.all([renderReports(regions), renderFactChecks(regions), renderProtection(regions)]);
+  await Promise.all([renderReports(regions), renderFactChecks(regions), renderProtection(regions), renderBroadcasts()]);
 }
 
 initMap();

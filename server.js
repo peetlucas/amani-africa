@@ -6,6 +6,7 @@ const multer = require("multer");
 const store = require("./store");
 const whatsapp = require("./whatsapp");
 const ai = require("./ai");
+const broadcast = require("./broadcast");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,14 +39,29 @@ app.use("/uploads", express.static(UPLOAD_DIR));
 // ---------- Regions ----------
 
 app.get("/api/regions", (req, res) => {
-  res.json(store.getRegions());
+  const regions = store.getRegions().map((r) => ({ ...r, subscriberCount: store.getSubscriberCount(r.id) }));
+  res.json(regions);
 });
 
-app.post("/api/regions/:id/tension", (req, res) => {
+const TENSION_ALERT = {
+  amber: (r) => `\u{1F7E0} Amani Africa Alert: ${r.name}, ${r.city} tension has been raised to AMBER (rising tension). Avoid unnecessary travel there and don't act on unverified claims. Reply "report" if you see something concerning.`,
+  red: (r) => `\u{1F534} Amani Africa Alert: ${r.name}, ${r.city} tension has been raised to RED (high tension / active concern). Avoid the area if possible. Reply "protect me" if you feel at risk.`,
+  green: (r) => `\u{1F7E2} Amani Africa Update: ${r.name}, ${r.city} has returned to CALM. Verifiers confirm no ongoing concern.`,
+};
+
+app.post("/api/regions/:id/tension", async (req, res) => {
   const { level } = req.body;
+  const before = store.getRegion(req.params.id);
+  const previousLevel = before ? before.tension : null;
   const region = store.setTension(req.params.id, level);
   if (!region) return res.status(400).json({ error: "Invalid region id or tension level" });
-  res.json(region);
+
+  if (previousLevel !== level) {
+    const buildAlert = TENSION_ALERT[level];
+    if (buildAlert) await broadcast.broadcastToRegion(region.id, buildAlert(region));
+  }
+
+  res.json({ ...region, subscriberCount: store.getSubscriberCount(region.id) });
 });
 
 // ---------- Fact-checks ----------
@@ -54,13 +70,18 @@ app.get("/api/factchecks", (req, res) => {
   res.json(store.getFactChecks(req.query.regionId));
 });
 
-app.post("/api/factchecks", (req, res) => {
+app.post("/api/factchecks", async (req, res) => {
   const { regionId, claim, verdict, explanation, postedBy, sourceReportId } = req.body;
   if (!regionId || !claim || !verdict) {
     return res.status(400).json({ error: "regionId, claim and verdict are required" });
   }
   const entry = store.addFactCheck({ regionId, claim, verdict, explanation, postedBy, sourceReportId });
   if (!entry) return res.status(400).json({ error: "Unknown regionId" });
+
+  const region = store.getRegion(regionId);
+  const alert = `\u{1F4CB} Amani Africa Fact-check for ${region.name}: "${claim}" → ${verdict.toUpperCase()}. ${explanation || ""}`.trim();
+  await broadcast.broadcastToRegion(regionId, alert);
+
   res.json(entry);
 });
 
@@ -140,7 +161,11 @@ function escapeXml(str) {
 }
 
 app.get("/api/status", (req, res) => {
-  res.json({ ok: true, aiEnabled: ai.HAS_KEY });
+  res.json({ ok: true, aiEnabled: ai.HAS_KEY, twilioEnabled: broadcast.HAS_TWILIO });
+});
+
+app.get("/api/broadcasts", (req, res) => {
+  res.json(broadcast.getLog());
 });
 
 // Keep upload failures (oversized/wrong-type file) as a clean 400 instead of a stack trace.

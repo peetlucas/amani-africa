@@ -368,6 +368,16 @@ body {
 
 .report-desc { margin-bottom: 10px; }
 
+.attachment { margin-bottom: 10px; }
+
+.attachment img, .attachment video {
+  max-width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
 .report-actions { display: flex; gap: 8px; }
 
 .report-actions button {

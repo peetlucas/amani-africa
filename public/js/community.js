@@ -12,6 +12,7 @@ const chatText = document.getElementById("chatText");
 const reportForm = document.getElementById("reportForm");
 const reportDescription = document.getElementById("reportDescription");
 const reportCategory = document.getElementById("reportCategory");
+const reportAttachment = document.getElementById("reportAttachment");
 
 let currentRegion = null;
 
@@ -32,6 +33,7 @@ async function send(body) {
 function showReportForm() {
   reportForm.classList.remove("hidden");
   reportDescription.value = "";
+  reportAttachment.value = "";
   reportDescription.focus();
 }
 
@@ -42,13 +44,25 @@ function hideReportForm() {
 async function submitReport() {
   const description = reportDescription.value.trim();
   if (!description) return;
-  addBubble(`[Report] ${description}`, "user");
-  await Api.postReport({
-    regionId: currentRegion.id,
-    category: reportCategory.value,
-    description,
-    contact: null, // anonymous by default in the web form
-  });
+  const file = reportAttachment.files[0];
+  addBubble(`[Report] ${description}${file ? ` (with ${file.type.startsWith("video/") ? "video" : "photo"} attached)` : ""}`, "user");
+
+  if (file) {
+    const formData = new FormData();
+    formData.append("regionId", currentRegion.id);
+    formData.append("category", reportCategory.value);
+    formData.append("description", description);
+    formData.append("attachment", file);
+    await Api.postReportWithFile(formData);
+  } else {
+    await Api.postReport({
+      regionId: currentRegion.id,
+      category: reportCategory.value,
+      description,
+      contact: null, // anonymous by default in the web form
+    });
+  }
+
   addBubble(
     `Thank you - your report for ${currentRegion.name} has been sent to local verifiers for review. It is confidential and not shown publicly. If anyone is in immediate danger, please also contact local authorities directly.`,
     "bot"

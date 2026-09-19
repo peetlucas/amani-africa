@@ -17,10 +17,10 @@ function stripRegionName(text, region) {
   return text.replace(re, "").trim();
 }
 
-async function handleIncomingMessage({ from, body }) {
+async function handleIncomingMessage({ from, body, mediaUrl, mediaType }) {
   const text = (body || "").trim();
   const regions = store.getRegions();
-  const intent = await ai.classifyIntent(text);
+  const intent = await ai.classifyIntent(text || (mediaUrl ? "report" : ""));
   const region = ai.matchRegion(text, regions);
 
   switch (intent) {
@@ -53,10 +53,18 @@ async function handleIncomingMessage({ from, body }) {
       }
       const description = stripRegionName(text, region).replace(/^report[:\s]*/i, "").trim() || "No further detail given.";
       const category = ai.guessReportCategory(description);
-      const report = store.addReport({ regionId: region.id, category, description, contact: from });
+      const report = store.addReport({
+        regionId: region.id,
+        category,
+        description,
+        contact: from,
+        attachmentUrl: mediaUrl || null,
+        attachmentType: mediaUrl ? mediaType : null,
+      });
       return [
         `Thank you - your report for ${region.name} has been sent to local verifiers for review. It is confidential and not shown publicly.`,
         `Category: ${category.replace("_", " ")}`,
+        mediaUrl ? "Your attached photo/video was included - this helps verifiers confirm faster." : "You can also attach a photo or video for verifiers to check, if you have one - it's optional.",
         `If you or someone else is in immediate danger, please also contact local authorities directly.`,
       ].join("\n");
     }

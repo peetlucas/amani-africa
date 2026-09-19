@@ -33,6 +33,10 @@ const Api = {
       body: JSON.stringify(payload),
     })).json();
   },
+  // Use when an attachment (photo/video) is present - browser sets the multipart boundary itself.
+  async postReportWithFile(formData) {
+    return (await fetch("/api/reports", { method: "POST", body: formData })).json();
+  },
   async resolveReport(id, payload) {
     return (await fetch(`/api/reports/${id}/resolve`, {
       method: "POST",

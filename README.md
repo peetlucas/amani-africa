@@ -19,7 +19,7 @@ Attacks on people or businesses tied to nationality rarely start as violence —
 
 A single backend serves two views of the same live data:
 
-- **Community Assistant** — a WhatsApp-style chat (quick-reply buttons, minimal typing) where anyone can ask "Is this area calm today?", confidentially report a rumor/gathering/targeted business/attack in progress, request a protection contact, or check the latest verified fact-check.
+- **Community Assistant** — a WhatsApp-style chat (quick-reply buttons, minimal typing) where anyone can ask "Is this area calm today?", confidentially report a rumor/gathering/targeted business/attack in progress (with an optional photo or video attached as evidence), request a protection contact, or check the latest verified fact-check.
 - **Verifier Console** — a dashboard with a live map of all areas color-coded **Green / Amber / Red**, an incoming-reports queue, a fact-check form (which can be pre-filled directly from a report), and a protection-request queue.
 
 Because both views share the same backend, a report submitted anonymously in the Community Assistant appears immediately in the Verifier Console, and a tension-level change or fact-check posted by a verifier is reflected immediately back in the Community Assistant and on the map — that live loop (report → verify → debunk/confirm → area sees the result) is the core proof-of-concept moment, and it's the same loop that would need to run in minutes, not hours, to actually prevent an escalation.
@@ -35,6 +35,7 @@ These aren't afterthoughts — they were the main design constraint once the tar
 - **Tension level only changes on verifier action**, never automatically from raw report volume. This blocks a coordinated flood of false reports from being used to paint a community as dangerous (a realistic attack vector on a tool like this).
 - **Verifier pool must be cross-community by design** (documented above) — a single-community verifier set can be captured by the same narrative the tool exists to counter.
 - **Fact-checks always carry a claim, verdict, and explanation** — never just a status — so a debunked rumor visibly loses to a stated reason, not just an authority's say-so.
+- **Attachments are optional evidence, never required.** A reporter can attach a photo or video (web form, or a real photo sent over WhatsApp) so a verifier has something concrete to check against, but the flow works the same without one - most reports won't have media, and that's fine.
 
 This is a proof of concept: in a real deployment, verifier identity would be authenticated, verifier composition would be enforced (not just documented), and all actions would carry an audit trail.
 
@@ -84,6 +85,7 @@ server.js         Express app: REST API + WhatsApp webhook
 whatsapp.js        Shared bot logic (used by both the webhook and the web simulator)
 ai.js              Claude API integration + keyword fallback
 store.js           In-memory data store (regions, fact-checks, reports, protection requests)
+uploads/           Report photo/video attachments (created at runtime, not committed)
 public/            Landing page, Community Assistant, Verifier Console, map, styles
 ```
 

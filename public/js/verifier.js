@@ -81,6 +81,15 @@ async function renderRegions() {
   return regions;
 }
 
+function renderAttachment(report) {
+  if (!report.attachmentUrl) return "";
+  const isExternal = /^https?:\/\//.test(report.attachmentUrl); // e.g. a raw Twilio media URL
+  if (report.attachmentType === "video") {
+    return `<div class="attachment"><video src="${report.attachmentUrl}" controls ${isExternal ? "" : ""}></video>${isExternal ? '<div class="empty-state">External media link - may require verifier auth to view.</div>' : ""}</div>`;
+  }
+  return `<div class="attachment"><img src="${report.attachmentUrl}" alt="Attached evidence" /></div>`;
+}
+
 async function renderReports(regions) {
   const pending = await Api.getReports("new");
   const nameOf = (id) => regions.find((r) => r.id === id)?.name || id;
@@ -98,6 +107,7 @@ async function renderReports(regions) {
         <span class="category-badge ${r.category}">${CATEGORY_LABEL[r.category] || r.category}</span>
       </div>
       <div class="report-desc">${r.description}</div>
+      ${renderAttachment(r)}
       <div class="report-actions">
         <button data-action="factcheck">Turn into fact-check</button>
         <button data-action="resolve">Mark resolved</button>

@@ -73,7 +73,7 @@ function getLatestFactCheck(regionId) {
 // ---------- Anonymous reports: the early-warning channel, before a rumor becomes an incident ----------
 // No identity is required. An optional contact is only used if the reporter wants a follow-up.
 
-function addReport({ regionId, category, description, contact }) {
+function addReport({ regionId, category, description, contact, attachmentUrl, attachmentType }) {
   const region = getRegion(regionId);
   if (!region) return null;
   const entry = {
@@ -82,6 +82,8 @@ function addReport({ regionId, category, description, contact }) {
     category: REPORT_CATEGORIES.includes(category) ? category : "other",
     description,
     contact: contact || null,
+    attachmentUrl: attachmentUrl || null, // optional photo/video evidence - never required
+    attachmentType: attachmentType || null, // "image" | "video"
     status: "new", // "new" | "reviewing" | "resolved"
     resolution: null,
     createdAt: Date.now(),

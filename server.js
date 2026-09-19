@@ -1,6 +1,8 @@
 require("dotenv").config();
 const express = require("express");
 const path = require("path");
+const fs = require("fs");
+const multer = require("multer");
 const store = require("./store");
 const whatsapp = require("./whatsapp");
 const ai = require("./ai");
@@ -8,9 +10,30 @@ const ai = require("./ai");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Optional evidence attached to a report - photo or short video. Stored on local disk for
+// this proof of concept; swap for object storage (S3/GCS) before any real deployment.
+const UPLOAD_DIR = path.join(__dirname, "uploads");
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: UPLOAD_DIR,
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname || "");
+      cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+    },
+  }),
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+  fileFilter: (req, file, cb) => {
+    const ok = /^image\/|^video\//.test(file.mimetype);
+    cb(ok ? null : new Error("Only image or video attachments are allowed"), ok);
+  },
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false })); // Twilio posts form-encoded bodies
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/uploads", express.static(UPLOAD_DIR));
 
 // ---------- Regions ----------
 
@@ -47,12 +70,20 @@ app.get("/api/reports", (req, res) => {
   res.json(store.getReports(req.query.status));
 });
 
-app.post("/api/reports", (req, res) => {
+// Attachment is entirely optional - accepts a normal JSON post with no file, or a
+// multipart/form-data post with an "attachment" field carrying an image/video.
+app.post("/api/reports", upload.single("attachment"), (req, res) => {
   const { regionId, category, description, contact } = req.body;
   if (!regionId || !description) {
     return res.status(400).json({ error: "regionId and description are required" });
   }
-  const entry = store.addReport({ regionId, category, description, contact });
+  let attachmentUrl = null;
+  let attachmentType = null;
+  if (req.file) {
+    attachmentUrl = `/uploads/${req.file.filename}`;
+    attachmentType = req.file.mimetype.startsWith("video/") ? "video" : "image";
+  }
+  const entry = store.addReport({ regionId, category, description, contact, attachmentUrl, attachmentType });
   if (!entry) return res.status(400).json({ error: "Unknown regionId" });
   res.json(entry);
 });
@@ -90,9 +121,15 @@ app.post("/api/assistant/message", async (req, res) => {
 app.post("/webhook/whatsapp", async (req, res) => {
   const from = req.body.From; // e.g. "whatsapp:+2547XXXXXXXX"
   const body = req.body.Body;
-  console.log(`[whatsapp] ${from}: ${body}`);
+  // Twilio attaches media as MediaUrl0/MediaContentType0 when NumMedia > 0. The URL requires
+  // Twilio account auth to fetch directly - stored as a reference here; a real deployment
+  // would re-host it (like the web upload path does) rather than link to Twilio directly.
+  const numMedia = parseInt(req.body.NumMedia || "0", 10);
+  const mediaUrl = numMedia > 0 ? req.body.MediaUrl0 : null;
+  const mediaType = numMedia > 0 && (req.body.MediaContentType0 || "").startsWith("video/") ? "video" : "image";
+  console.log(`[whatsapp] ${from}: ${body}${mediaUrl ? ` [attached media: ${mediaUrl}]` : ""}`);
 
-  const reply = await whatsapp.handleIncomingMessage({ from, body });
+  const reply = await whatsapp.handleIncomingMessage({ from, body, mediaUrl, mediaType });
 
   res.set("Content-Type", "text/xml");
   res.send(`<?xml version="1.0" encoding="UTF-8"?><Response><Message>${escapeXml(reply)}</Message></Response>`);
@@ -104,6 +141,14 @@ function escapeXml(str) {
 
 app.get("/api/status", (req, res) => {
   res.json({ ok: true, aiEnabled: ai.HAS_KEY });
+});
+
+// Keep upload failures (oversized/wrong-type file) as a clean 400 instead of a stack trace.
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError || /image or video/.test(err.message || "")) {
+    return res.status(400).json({ error: err.message });
+  }
+  next(err);
 });
 
 app.listen(PORT, () => {

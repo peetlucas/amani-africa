@@ -33,14 +33,15 @@ async function classifyIntent(text) {
       const system = [
         "Classify the user's WhatsApp message into exactly one intent.",
         "Reply with ONLY one word, no punctuation:",
-        "SAFETY - asking if a market/area is safe or calm",
-        "VOUCH - asking to register or be vouched for as a trader",
+        "SAFETY - asking if a region/area is calm or safe",
+        "REPORT - reporting a rumor, a gathering, a business being targeted, or an attack in progress",
+        "PROTECTION - asking to be connected to a peace-committee / protection contact because they feel at risk",
         "FACTCHECK - asking about a rumor or wanting the latest verified fact-check",
-        "STATUS - asking whether their vouch request was approved",
+        "STATUS - asking about the status of a report or protection request they already made",
         "MENU - anything else, greetings, or unclear",
       ].join("\n");
       const reply = await callClaude(system, text);
-      const intent = reply.toUpperCase().match(/SAFETY|VOUCH|FACTCHECK|STATUS|MENU/)?.[0];
+      const intent = reply.toUpperCase().match(/SAFETY|REPORT|PROTECTION|FACTCHECK|STATUS|MENU/)?.[0];
       if (intent) return intent;
     } catch (err) {
       console.error("[ai] classifyIntent fallback due to error:", err.message);
@@ -48,17 +49,28 @@ async function classifyIntent(text) {
   }
 
   // Keyword fallback - always available, no API key required.
-  if (/vouch|register|join|sign\s*up/.test(lower)) return "VOUCH";
-  if (/rumor|rumour|fact.?check|true|false|heard that/.test(lower)) return "FACTCHECK";
-  if (/status|approved|pending/.test(lower)) return "STATUS";
+  if (/report|gathering|crowd|mob|targeted|attack|being attacked/.test(lower)) return "REPORT";
+  if (/protect|at risk|unsafe for me|feel unsafe|help me/.test(lower)) return "PROTECTION";
+  if (/rumor|rumour|fact.?check|true or false|heard that/.test(lower)) return "FACTCHECK";
+  if (/status|resolved|pending|reviewing/.test(lower)) return "STATUS";
   if (/safe|calm|tension|trouble|risk/.test(lower)) return "SAFETY";
   return "MENU";
 }
 
-// Try to extract a known market name from free text (simple contains-match fallback).
-function matchMarket(text, markets) {
+// Try to extract a known region name from free text (simple contains-match fallback).
+function matchRegion(text, regions) {
   const lower = text.toLowerCase();
-  return markets.find((m) => lower.includes(m.name.toLowerCase().split(" ")[0].toLowerCase()));
+  return regions.find((r) => lower.includes(r.name.toLowerCase().split(" ")[0].toLowerCase()));
+}
+
+// Very rough category guess for a report, used by the fallback path.
+function guessReportCategory(text) {
+  const lower = text.toLowerCase();
+  if (/attack|violence|burning|looting/.test(lower)) return "attack_in_progress";
+  if (/shop|business|stall|store/.test(lower)) return "business_targeted";
+  if (/crowd|gathering|mob forming|group forming/.test(lower)) return "gathering";
+  if (/rumor|rumour|claim|heard/.test(lower)) return "rumor";
+  return "other";
 }
 
 async function translateToSwahili(text) {
@@ -72,4 +84,4 @@ async function translateToSwahili(text) {
   }
 }
 
-module.exports = { classifyIntent, matchMarket, translateToSwahili, HAS_KEY };
+module.exports = { classifyIntent, matchRegion, guessReportCategory, translateToSwahili, HAS_KEY };

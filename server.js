@@ -12,48 +12,71 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false })); // Twilio posts form-encoded bodies
 app.use(express.static(path.join(__dirname, "public")));
 
-// ---------- Markets ----------
+// ---------- Regions ----------
 
-app.get("/api/markets", (req, res) => {
-  res.json(store.getMarkets());
+app.get("/api/regions", (req, res) => {
+  res.json(store.getRegions());
 });
 
-app.post("/api/markets/:id/tension", (req, res) => {
+app.post("/api/regions/:id/tension", (req, res) => {
   const { level } = req.body;
-  const market = store.setTension(req.params.id, level);
-  if (!market) return res.status(400).json({ error: "Invalid market id or tension level" });
-  res.json(market);
+  const region = store.setTension(req.params.id, level);
+  if (!region) return res.status(400).json({ error: "Invalid region id or tension level" });
+  res.json(region);
 });
 
 // ---------- Fact-checks ----------
 
 app.get("/api/factchecks", (req, res) => {
-  res.json(store.getFactChecks(req.query.marketId));
+  res.json(store.getFactChecks(req.query.regionId));
 });
 
 app.post("/api/factchecks", (req, res) => {
-  const { marketId, claim, verdict, explanation, postedBy } = req.body;
-  if (!marketId || !claim || !verdict) {
-    return res.status(400).json({ error: "marketId, claim and verdict are required" });
+  const { regionId, claim, verdict, explanation, postedBy, sourceReportId } = req.body;
+  if (!regionId || !claim || !verdict) {
+    return res.status(400).json({ error: "regionId, claim and verdict are required" });
   }
-  const entry = store.addFactCheck({ marketId, claim, verdict, explanation, postedBy });
-  if (!entry) return res.status(400).json({ error: "Unknown marketId" });
+  const entry = store.addFactCheck({ regionId, claim, verdict, explanation, postedBy, sourceReportId });
+  if (!entry) return res.status(400).json({ error: "Unknown regionId" });
   res.json(entry);
 });
 
-// ---------- Traders / vouching ----------
+// ---------- Anonymous reports ----------
 
-app.get("/api/traders", (req, res) => {
-  res.json(store.getTraders(req.query.status));
+app.get("/api/reports", (req, res) => {
+  res.json(store.getReports(req.query.status));
 });
 
-app.post("/api/traders/:id/approve", (req, res) => {
-  const trader = store.approveTrader(req.params.id);
-  if (!trader) return res.status(404).json({ error: "Trader not found" });
-  res.json(trader);
+app.post("/api/reports", (req, res) => {
+  const { regionId, category, description, contact } = req.body;
+  if (!regionId || !description) {
+    return res.status(400).json({ error: "regionId and description are required" });
+  }
+  const entry = store.addReport({ regionId, category, description, contact });
+  if (!entry) return res.status(400).json({ error: "Unknown regionId" });
+  res.json(entry);
 });
 
-// ---------- Trader assistant (web simulator - same logic the WhatsApp bot uses) ----------
+app.post("/api/reports/:id/resolve", (req, res) => {
+  const { resolution, status } = req.body;
+  const report = store.resolveReport(req.params.id, { resolution, status });
+  if (!report) return res.status(404).json({ error: "Report not found" });
+  res.json(report);
+});
+
+// ---------- Protection requests ----------
+
+app.get("/api/protection", (req, res) => {
+  res.json(store.getProtectionRequests(req.query.status));
+});
+
+app.post("/api/protection/:id/connect", (req, res) => {
+  const request = store.connectProtection(req.params.id);
+  if (!request) return res.status(404).json({ error: "Protection request not found" });
+  res.json(request);
+});
+
+// ---------- Community assistant (web simulator - same logic the WhatsApp bot uses) ----------
 
 app.post("/api/assistant/message", async (req, res) => {
   const { from, body } = req.body;

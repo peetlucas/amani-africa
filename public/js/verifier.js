@@ -1,16 +1,25 @@
-// Verifier Console - live map + tension controls + fact-check posting + vouch approvals.
+// Verifier Console - live map + tension controls + confidential reports + fact-checks + protection requests.
 
-const TENSION_LEVELS = ["calm", "watch", "high"];
-const TENSION_COLOR = { calm: "#2fa84f", watch: "#d9a441", high: "#d1453d" };
+const TENSION_LEVELS = ["green", "amber", "red"];
+const TENSION_COLOR = { green: "#2fa84f", amber: "#d9a441", red: "#d1453d" };
+const CATEGORY_LABEL = {
+  rumor: "Rumor circulating",
+  gathering: "Crowd / gathering forming",
+  business_targeted: "Business being targeted",
+  attack_in_progress: "Attack in progress",
+  other: "Other",
+};
 
 let map;
 let markerLayer = {};
 
 function initMap() {
-  map = L.map("map").setView([-1.2, 36.8], 7);
+  map = L.map("map").setView([-5, 30], 4);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors",
   }).addTo(map);
+  setTimeout(() => map.invalidateSize(), 100);
+  window.addEventListener("resize", () => map.invalidateSize());
 }
 
 function markerIcon(level) {
@@ -21,50 +30,102 @@ function markerIcon(level) {
   });
 }
 
-async function renderMarkets() {
-  const markets = await Api.getMarkets();
-  const listEl = document.getElementById("marketList");
-  const fcMarketSelect = document.getElementById("fcMarket");
+async function renderRegions() {
+  const regions = await Api.getRegions();
+  const listEl = document.getElementById("regionList");
+  const fcRegionSelect = document.getElementById("fcRegion");
 
-  listEl.innerHTML = markets.map((m) => `
-    <div class="market-row" data-id="${m.id}">
+  listEl.innerHTML = regions.map((r) => `
+    <div class="market-row" data-id="${r.id}">
       <div>
-        <div class="name"><span class="tension-dot ${m.tension}"></span>${m.name}</div>
-        <div class="city">${m.city}</div>
+        <div class="name"><span class="tension-dot ${r.tension}"></span>${r.name}</div>
+        <div class="city">${r.city}, ${r.country} — ${r.type}</div>
       </div>
       <div class="tension-buttons">
-        ${TENSION_LEVELS.map((lvl) => `<button data-level="${lvl}" class="${lvl === m.tension ? `active ${lvl}` : ""}">${lvl}</button>`).join("")}
+        ${TENSION_LEVELS.map((lvl) => `<button data-level="${lvl}" class="${lvl === r.tension ? `active ${lvl}` : ""}">${lvl}</button>`).join("")}
       </div>
     </div>
   `).join("");
 
-  fcMarketSelect.innerHTML = markets.map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+  const previousSelection = fcRegionSelect.value;
+  fcRegionSelect.innerHTML = regions.map((r) => `<option value="${r.id}">${r.name} (${r.city})</option>`).join("");
+  if (previousSelection) fcRegionSelect.value = previousSelection;
 
-  markets.forEach((m) => {
-    if (markerLayer[m.id]) {
-      markerLayer[m.id].setIcon(markerIcon(m.tension));
+  const isFirstRender = Object.keys(markerLayer).length === 0;
+
+  regions.forEach((r) => {
+    if (markerLayer[r.id]) {
+      markerLayer[r.id].setIcon(markerIcon(r.tension));
     } else {
-      markerLayer[m.id] = L.marker([m.lat, m.lng], { icon: markerIcon(m.tension) })
+      markerLayer[r.id] = L.marker([r.lat, r.lng], { icon: markerIcon(r.tension) })
         .addTo(map)
-        .bindPopup(`<b>${m.name}</b><br>${m.city}`);
+        .bindPopup(`<b>${r.name}</b><br>${r.city}, ${r.country}`);
     }
   });
+
+  if (isFirstRender && regions.length > 0) {
+    const bounds = L.latLngBounds(regions.map((r) => [r.lat, r.lng]));
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }
 
   listEl.querySelectorAll(".market-row").forEach((row) => {
     const id = row.dataset.id;
     row.querySelectorAll(".tension-buttons button").forEach((btn) => {
       btn.addEventListener("click", async () => {
         await Api.setTension(id, btn.dataset.level);
-        await renderMarkets();
+        await renderRegions();
       });
+    });
+  });
+
+  return regions;
+}
+
+async function renderReports(regions) {
+  const pending = await Api.getReports("new");
+  const nameOf = (id) => regions.find((r) => r.id === id)?.name || id;
+  const el = document.getElementById("reportList");
+
+  if (pending.length === 0) {
+    el.innerHTML = `<div class="empty-state">No new reports.</div>`;
+    return;
+  }
+
+  el.innerHTML = pending.map((r) => `
+    <div class="report-item" data-id="${r.id}">
+      <div class="report-header">
+        <b>${nameOf(r.regionId)}</b>
+        <span class="category-badge ${r.category}">${CATEGORY_LABEL[r.category] || r.category}</span>
+      </div>
+      <div class="report-desc">${r.description}</div>
+      <div class="report-actions">
+        <button data-action="factcheck">Turn into fact-check</button>
+        <button data-action="resolve">Mark resolved</button>
+      </div>
+    </div>
+  `).join("");
+
+  el.querySelectorAll(".report-item").forEach((item) => {
+    const id = item.dataset.id;
+    const report = pending.find((r) => r.id === Number(id));
+
+    item.querySelector('[data-action="resolve"]').addEventListener("click", async () => {
+      await Api.resolveReport(id, { status: "resolved" });
+      await refreshAll();
+    });
+
+    item.querySelector('[data-action="factcheck"]').addEventListener("click", () => {
+      document.getElementById("fcRegion").value = report.regionId;
+      document.getElementById("fcClaim").value = report.description;
+      document.getElementById("fcClaim").scrollIntoView({ behavior: "smooth", block: "center" });
+      document.getElementById("fcClaim").dataset.sourceReportId = id;
     });
   });
 }
 
-async function renderFactChecks() {
+async function renderFactChecks(regions) {
   const list = await Api.getFactChecks();
-  const markets = await Api.getMarkets();
-  const nameOf = (id) => markets.find((m) => m.id === id)?.name || id;
+  const nameOf = (id) => regions.find((r) => r.id === id)?.name || id;
   const el = document.getElementById("factCheckList");
 
   if (list.length === 0) {
@@ -74,53 +135,56 @@ async function renderFactChecks() {
 
   el.innerHTML = list.map((f) => `
     <div class="fact-item">
-      <b>${nameOf(f.marketId)}</b> — "${f.claim}" is <span class="verdict ${f.verdict}">${f.verdict.toUpperCase()}</span><br>
+      <b>${nameOf(f.regionId)}</b> — "${f.claim}" is <span class="verdict ${f.verdict}">${f.verdict.toUpperCase()}</span><br>
       ${f.explanation}
     </div>
   `).join("");
 }
 
-async function renderTraders() {
-  const pending = await Api.getTraders("pending");
-  const markets = await Api.getMarkets();
-  const nameOf = (id) => markets.find((m) => m.id === id)?.name || id;
-  const el = document.getElementById("traderList");
+async function renderProtection(regions) {
+  const pending = await Api.getProtectionRequests("pending");
+  const nameOf = (id) => regions.find((r) => r.id === id)?.name || "Unspecified area";
+  const el = document.getElementById("protectionList");
 
   if (pending.length === 0) {
-    el.innerHTML = `<div class="empty-state">No pending vouch requests.</div>`;
+    el.innerHTML = `<div class="empty-state">No pending protection requests.</div>`;
     return;
   }
 
-  el.innerHTML = pending.map((t) => `
-    <div class="trader-item" data-id="${t.id}">
-      <span>${t.name} — ${nameOf(t.marketId)}</span>
-      <button>Approve</button>
+  el.innerHTML = pending.map((p) => `
+    <div class="trader-item" data-id="${p.id}">
+      <span>${nameOf(p.regionId)}${p.note ? ` — "${p.note}"` : ""}</span>
+      <button>Connect</button>
     </div>
   `).join("");
 
   el.querySelectorAll(".trader-item button").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const id = btn.closest(".trader-item").dataset.id;
-      await Api.approveTrader(id);
-      await renderTraders();
+      await Api.connectProtection(id);
+      await renderProtection(regions);
     });
   });
 }
 
 document.getElementById("factCheckForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const claimField = document.getElementById("fcClaim");
   await Api.postFactCheck({
-    marketId: document.getElementById("fcMarket").value,
-    claim: document.getElementById("fcClaim").value,
+    regionId: document.getElementById("fcRegion").value,
+    claim: claimField.value,
     verdict: document.getElementById("fcVerdict").value,
     explanation: document.getElementById("fcExplanation").value,
+    sourceReportId: claimField.dataset.sourceReportId || null,
   });
   e.target.reset();
-  await renderFactChecks();
+  delete claimField.dataset.sourceReportId;
+  await refreshAll();
 });
 
 async function refreshAll() {
-  await Promise.all([renderMarkets(), renderFactChecks(), renderTraders()]);
+  const regions = await renderRegions();
+  await Promise.all([renderReports(regions), renderFactChecks(regions), renderProtection(regions)]);
 }
 
 initMap();

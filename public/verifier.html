@@ -18,20 +18,31 @@
     </header>
 
     <div id="map"></div>
+    <div class="legend">
+      <span><span class="tension-dot green"></span>Calm</span>
+      <span><span class="tension-dot amber"></span>Rising tension</span>
+      <span><span class="tension-dot red"></span>High tension / active concern</span>
+    </div>
 
     <section class="panel">
-      <h2>Markets</h2>
-      <div id="marketList" class="market-list"></div>
+      <h2>Areas</h2>
+      <div id="regionList" class="market-list"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Incoming reports</h2>
+      <p class="panel-hint">Confidential - reporter identity (if given) is never shown publicly, only to verifiers.</p>
+      <div id="reportList" class="report-list"></div>
     </section>
 
     <section class="panel">
       <h2>Post a fact-check</h2>
       <form id="factCheckForm" class="form-grid">
-        <label>Market
-          <select id="fcMarket" required></select>
+        <label>Area
+          <select id="fcRegion" required></select>
         </label>
         <label>Rumor / claim
-          <input type="text" id="fcClaim" placeholder="e.g. Police have blocked the main gate" required />
+          <input type="text" id="fcClaim" placeholder="e.g. A specific community is planning to attack shops tonight" required />
         </label>
         <label>Verdict
           <select id="fcVerdict" required>
@@ -49,8 +60,9 @@
     </section>
 
     <section class="panel">
-      <h2>Pending vouch requests</h2>
-      <div id="traderList" class="trader-list"></div>
+      <h2>Protection requests</h2>
+      <p class="panel-hint">People who reported feeling at risk and asked to be connected to a peace-committee contact.</p>
+      <div id="protectionList" class="trader-list"></div>
     </section>
   </div>
 

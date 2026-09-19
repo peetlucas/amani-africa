@@ -1,7 +1,7 @@
 :root {
-  --calm: #2fa84f;
-  --watch: #d9a441;
-  --high: #d1453d;
+  --green: #2fa84f;
+  --amber: #d9a441;
+  --red: #d1453d;
   --bg: #f4f6f5;
   --ink: #1c2a24;
   --muted: #6b7a73;
@@ -240,9 +240,20 @@ body {
   margin-right: 6px;
 }
 
-.tension-dot.calm { background: var(--calm); }
-.tension-dot.watch { background: var(--watch); }
-.tension-dot.high { background: var(--high); }
+.tension-dot.green { background: var(--green); }
+.tension-dot.amber { background: var(--amber); }
+.tension-dot.red { background: var(--red); }
+
+.legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin: -12px 0 24px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.legend span { display: flex; align-items: center; }
 
 .tension-buttons { display: flex; gap: 6px; }
 
@@ -255,9 +266,9 @@ body {
   cursor: pointer;
 }
 
-.tension-buttons button.active.calm { background: var(--calm); color: white; }
-.tension-buttons button.active.watch { background: var(--watch); color: white; }
-.tension-buttons button.active.high { background: var(--high); color: white; }
+.tension-buttons button.active.green { background: var(--green); color: white; }
+.tension-buttons button.active.amber { background: var(--amber); color: white; }
+.tension-buttons button.active.red { background: var(--red); color: white; }
 
 .form-grid {
   display: grid;
@@ -297,9 +308,9 @@ body {
   font-size: 0.88rem;
 }
 
-.fact-item .verdict.true { color: var(--calm); font-weight: 700; }
-.fact-item .verdict.false { color: var(--high); font-weight: 700; }
-.fact-item .verdict.unverified { color: var(--watch); font-weight: 700; }
+.fact-item .verdict.true { color: var(--green); font-weight: 700; }
+.fact-item .verdict.false { color: var(--red); font-weight: 700; }
+.fact-item .verdict.unverified { color: var(--amber); font-weight: 700; }
 
 .trader-item {
   display: flex;
@@ -318,3 +329,103 @@ body {
 }
 
 .empty-state { color: var(--muted); font-size: 0.85rem; font-style: italic; }
+.panel-hint { color: var(--muted); font-size: 0.8rem; margin-top: -8px; margin-bottom: 14px; }
+
+/* ---------- Reports ---------- */
+
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.report-item {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.category-badge {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #eee;
+  color: var(--ink);
+}
+
+.category-badge.attack_in_progress { background: var(--red); color: white; }
+.category-badge.business_targeted { background: var(--amber); color: white; }
+.category-badge.gathering { background: #f0e2b6; }
+.category-badge.rumor { background: #e7eef0; }
+
+.report-desc { margin-bottom: 10px; }
+
+.report-actions { display: flex; gap: 8px; }
+
+.report-actions button {
+  border: 1px solid var(--border);
+  background: white;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+/* ---------- Inline report form (Community Assistant) ---------- */
+
+.inline-form {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fafcfb;
+}
+
+.inline-form.hidden { display: none; }
+
+.inline-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.inline-form textarea, .inline-form select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.inline-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.inline-form-actions button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: white;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.inline-form-actions button.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}

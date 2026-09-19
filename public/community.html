@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Amani Africa — Community Assistant</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="phone">
+    <div class="phone-header">
+      <a href="index.html" class="back">←</a>
+      <div>
+        <div class="phone-title">Amani Africa</div>
+        <div class="phone-subtitle">Community Assistant</div>
+      </div>
+    </div>
+
+    <div class="market-select">
+      <label for="regionPicker">Your area:</label>
+      <select id="regionPicker"></select>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div id="reportForm" class="inline-form hidden">
+      <label>What's happening? (no name needed)
+        <textarea id="reportDescription" rows="2" placeholder="e.g. A crowd is gathering outside the shops on Main Street"></textarea>
+      </label>
+      <label>Category
+        <select id="reportCategory">
+          <option value="rumor">Rumor circulating</option>
+          <option value="gathering">Crowd / gathering forming</option>
+          <option value="business_targeted">A business is being targeted</option>
+          <option value="attack_in_progress">Attack in progress</option>
+          <option value="other">Other</option>
+        </select>
+      </label>
+      <div class="inline-form-actions">
+        <button type="button" id="reportCancel">Cancel</button>
+        <button type="button" id="reportSubmit" class="primary">Send report confidentially</button>
+      </div>
+    </div>
+
+    <div class="quick-replies" id="quickReplies">
+      <button data-msg="is-safe">Is it calm here today?</button>
+      <button data-msg="report">Report a concern</button>
+      <button data-msg="protect">Request protection contact</button>
+      <button data-msg="factcheck">Latest fact-check</button>
+      <button data-msg="status">Check my report status</button>
+    </div>
+
+    <form class="chat-input" id="chatForm">
+      <input type="text" id="chatText" placeholder="Or type a message..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/community.js"></script>
+</body>
+</html>

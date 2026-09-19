@@ -1,18 +1,18 @@
-// Shared API helper used by both the Trader and Verifier pages.
+// Shared API helper used by both the Community Assistant and Verifier Console pages.
 
 const Api = {
-  async getMarkets() {
-    return (await fetch("/api/markets")).json();
+  async getRegions() {
+    return (await fetch("/api/regions")).json();
   },
-  async setTension(marketId, level) {
-    return (await fetch(`/api/markets/${marketId}/tension`, {
+  async setTension(regionId, level) {
+    return (await fetch(`/api/regions/${regionId}/tension`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ level }),
     })).json();
   },
-  async getFactChecks(marketId) {
-    const q = marketId ? `?marketId=${encodeURIComponent(marketId)}` : "";
+  async getFactChecks(regionId) {
+    const q = regionId ? `?regionId=${encodeURIComponent(regionId)}` : "";
     return (await fetch(`/api/factchecks${q}`)).json();
   },
   async postFactCheck(payload) {
@@ -22,12 +22,30 @@ const Api = {
       body: JSON.stringify(payload),
     })).json();
   },
-  async getTraders(status) {
+  async getReports(status) {
     const q = status ? `?status=${encodeURIComponent(status)}` : "";
-    return (await fetch(`/api/traders${q}`)).json();
+    return (await fetch(`/api/reports${q}`)).json();
   },
-  async approveTrader(id) {
-    return (await fetch(`/api/traders/${id}/approve`, { method: "POST" })).json();
+  async postReport(payload) {
+    return (await fetch("/api/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })).json();
+  },
+  async resolveReport(id, payload) {
+    return (await fetch(`/api/reports/${id}/resolve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })).json();
+  },
+  async getProtectionRequests(status) {
+    const q = status ? `?status=${encodeURIComponent(status)}` : "";
+    return (await fetch(`/api/protection${q}`)).json();
+  },
+  async connectProtection(id) {
+    return (await fetch(`/api/protection/${id}/connect`, { method: "POST" })).json();
   },
   async sendAssistantMessage(from, body) {
     return (await fetch("/api/assistant/message", {

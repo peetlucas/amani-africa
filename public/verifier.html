@@ -6,6 +6,7 @@
 <title>Amani Africa — Verifier Console</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="css/style.css" />
+<script src="js/theme.js"></script>
 </head>
 <body>
   <div class="console">
@@ -15,61 +16,68 @@
         <div class="phone-title">Amani Africa</div>
         <div class="phone-subtitle">Verifier Console</div>
       </div>
+      <div id="themeToggleSlot"></div>
     </header>
 
-    <div id="map"></div>
-    <div class="legend">
-      <span><span class="tension-dot green"></span>Calm</span>
-      <span><span class="tension-dot amber"></span>Rising tension</span>
-      <span><span class="tension-dot red"></span>High tension / active concern</span>
+    <div class="console-grid">
+      <div class="console-col console-col-map">
+        <div id="map"></div>
+        <div class="legend">
+          <span><span class="tension-dot green"></span>Calm</span>
+          <span><span class="tension-dot amber"></span>Rising tension</span>
+          <span><span class="tension-dot red"></span>High tension / active concern</span>
+        </div>
+
+        <section class="panel">
+          <h2>Areas</h2>
+          <div id="regionList" class="market-list"></div>
+        </section>
+      </div>
+
+      <div class="console-col console-col-side">
+        <section class="panel">
+          <h2>Incoming reports</h2>
+          <p class="panel-hint">Confidential - reporter identity (if given) is never shown publicly, only to verifiers.</p>
+          <div id="reportList" class="report-list"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Post a fact-check</h2>
+          <form id="factCheckForm" class="form-grid">
+            <label>Area
+              <select id="fcRegion" required></select>
+            </label>
+            <label>Rumor / claim
+              <input type="text" id="fcClaim" placeholder="e.g. A specific community is planning to attack shops tonight" required />
+            </label>
+            <label>Verdict
+              <select id="fcVerdict" required>
+                <option value="false">False</option>
+                <option value="true">True</option>
+                <option value="unverified">Unverified</option>
+              </select>
+            </label>
+            <label>Explanation
+              <input type="text" id="fcExplanation" placeholder="What did you confirm, and how?" required />
+            </label>
+            <button type="submit">Post fact-check</button>
+          </form>
+          <div id="factCheckList" class="fact-list"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Protection requests</h2>
+          <p class="panel-hint">People who reported feeling at risk and asked to be connected to a peace-committee contact.</p>
+          <div id="protectionList" class="trader-list"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Recent alerts sent</h2>
+          <p class="panel-hint">Every tension change and fact-check is pushed automatically to subscribers - no one has to ask.</p>
+          <div id="broadcastList" class="report-list"></div>
+        </section>
+      </div>
     </div>
-
-    <section class="panel">
-      <h2>Areas</h2>
-      <div id="regionList" class="market-list"></div>
-    </section>
-
-    <section class="panel">
-      <h2>Incoming reports</h2>
-      <p class="panel-hint">Confidential - reporter identity (if given) is never shown publicly, only to verifiers.</p>
-      <div id="reportList" class="report-list"></div>
-    </section>
-
-    <section class="panel">
-      <h2>Post a fact-check</h2>
-      <form id="factCheckForm" class="form-grid">
-        <label>Area
-          <select id="fcRegion" required></select>
-        </label>
-        <label>Rumor / claim
-          <input type="text" id="fcClaim" placeholder="e.g. A specific community is planning to attack shops tonight" required />
-        </label>
-        <label>Verdict
-          <select id="fcVerdict" required>
-            <option value="false">False</option>
-            <option value="true">True</option>
-            <option value="unverified">Unverified</option>
-          </select>
-        </label>
-        <label>Explanation
-          <input type="text" id="fcExplanation" placeholder="What did you confirm, and how?" required />
-        </label>
-        <button type="submit">Post fact-check</button>
-      </form>
-      <div id="factCheckList" class="fact-list"></div>
-    </section>
-
-    <section class="panel">
-      <h2>Protection requests</h2>
-      <p class="panel-hint">People who reported feeling at risk and asked to be connected to a peace-committee contact.</p>
-      <div id="protectionList" class="trader-list"></div>
-    </section>
-
-    <section class="panel">
-      <h2>Recent alerts sent</h2>
-      <p class="panel-hint">Every tension change and fact-check is pushed automatically to subscribers - no one has to ask.</p>
-      <div id="broadcastList" class="report-list"></div>
-    </section>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

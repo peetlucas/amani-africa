@@ -18,7 +18,9 @@ function initMap() {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap contributors",
   }).addTo(map);
-  setTimeout(() => map.invalidateSize(), 100);
+  // The map sits in a CSS grid column, which can take a moment to settle its final width -
+  // one invalidateSize() isn't always enough, so re-check a couple of times after layout settles.
+  [50, 250, 600].forEach((delay) => setTimeout(() => map.invalidateSize(), delay));
   window.addEventListener("resize", () => map.invalidateSize());
 }
 

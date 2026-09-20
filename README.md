@@ -96,6 +96,14 @@ uploads/           Report photo/video attachments (created at runtime, not commi
 public/            Landing page, Community Assistant, Verifier Console, map, styles
 ```
 
+## Relevance beyond this demo
+
+The Kenya and South Africa examples in this README are illustrative, not the whole point. Three things make this more than a snapshot of one moment:
+
+- **Reusable, not one-off.** Once a specific flare-up de-escalates, the same deployment keeps running quietly in Green mode — ready for the next one. Adding a new hotspot is a config change in `store.js` (a new region, a new verifier group), not a rebuild. The value is in early detection over time, the same way a smoke detector's value isn't tied to one fire.
+- **Sustainable by design, not by luck.** Large open-crowd crisis-mapping platforms (Ushahidi's original model is the well-documented example) depend on sustained unpaid moderation across a high-volume public crowd, and that volunteer capacity is widely noted in the literature as a long-term sustainability weak point. Amani Africa deliberately avoids that shape: a small, named, cross-community verifier role that can sit inside a mandate that already exists (a peace committee, an NGO's community liaison), not a volunteer corps recruited from scratch. That's a mitigation, not a guarantee — an unpaid verifier role can still atrophy, which is why authenticated verifier accounts are on the roadmap below.
+- **The pattern isn't Kenya/South-Africa-specific.** The same rumor-driven, nationality-targeted tension dynamic shows up in other African contexts — DRC intercommunal disputes, for instance — and the architecture (configurable regions, a language layer already proven with Swahili) is built to extend there without a rewrite. Scoped honestly, though: this is built for **pre-escalation community tension**, not for operating inside active armed conflict, which is a different problem with different risks (verifier safety itself becomes the danger in a warzone).
+
 ## What's next (beyond this proof of concept)
 
 - Persistent database instead of in-memory storage

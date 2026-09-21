@@ -315,6 +315,16 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   border-bottom-right-radius: 2px;
 }
 
+.bubble.alert {
+  background: var(--bubble-bot);
+  color: var(--ink);
+  align-self: center;
+  border: 1.5px solid var(--amber);
+  border-bottom-left-radius: 2px;
+  max-width: 92%;
+  font-weight: 600;
+}
+
 .quick-replies {
   display: flex;
   flex-wrap: wrap;
@@ -606,6 +616,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 .category-badge.business_targeted { background: var(--amber); color: white; }
 .category-badge.gathering { background: #f0e2b6; color: #1c2a24; }
 .category-badge.rumor { background: #cfe0e4; color: #1c2a24; }
+.category-badge.delivered { background: var(--green); color: white; }
 
 .report-desc { margin-bottom: 10px; }
 

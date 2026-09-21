@@ -15,6 +15,7 @@ const reportCategory = document.getElementById("reportCategory");
 const reportAttachment = document.getElementById("reportAttachment");
 
 let currentRegion = null;
+let inboxSince = Date.now(); // only show alerts that arrive after this session started
 
 function addBubble(text, who) {
   const bubble = document.createElement("div");
@@ -22,6 +23,16 @@ function addBubble(text, who) {
   bubble.textContent = text;
   chatEl.appendChild(bubble);
   chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+// Polls for proactive alerts (tension changes, fact-checks) the same way a real phone would
+// receive a WhatsApp push - nothing here was asked for by the user.
+async function pollInbox() {
+  const messages = await Api.getInbox(SIMULATED_PHONE, inboxSince);
+  messages.forEach((m) => {
+    addBubble(`🔔 ${m.message}`, "alert");
+    inboxSince = Math.max(inboxSince, m.createdAt);
+  });
 }
 
 async function send(body) {
@@ -111,6 +122,8 @@ async function init() {
     chatText.value = "";
     send(text);
   });
+
+  setInterval(pollInbox, 3000);
 }
 
 init();

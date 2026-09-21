@@ -61,4 +61,7 @@ const Api = {
   async getBroadcasts() {
     return (await fetch("/api/broadcasts")).json();
   },
+  async getInbox(contact, since) {
+    return (await fetch(`/api/inbox?contact=${encodeURIComponent(contact)}&since=${since || 0}`)).json();
+  },
 };

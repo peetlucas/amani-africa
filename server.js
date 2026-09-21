@@ -168,6 +168,14 @@ app.get("/api/broadcasts", (req, res) => {
   res.json(broadcast.getLog());
 });
 
+// Polled by the Community Assistant simulator so a proactive alert can appear in the open
+// chat window unprompted, the same way a real WhatsApp push would.
+app.get("/api/inbox", (req, res) => {
+  const { contact, since } = req.query;
+  if (!contact) return res.status(400).json({ error: "contact is required" });
+  res.json(broadcast.getInbox(contact, since));
+});
+
 // Keep upload failures (oversized/wrong-type file) as a clean 400 instead of a stack trace.
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError || /image or video/.test(err.message || "")) {

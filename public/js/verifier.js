@@ -192,11 +192,20 @@ async function renderBroadcasts() {
     <div class="report-item">
       <div class="report-header">
         <b>${b.regionName}</b>
-        <span class="category-badge ${b.recipientCount > 0 ? "business_targeted" : "other"}">${b.recipientCount} recipient${b.recipientCount === 1 ? "" : "s"}${b.simulated ? " (simulated)" : ""}</span>
+        ${broadcastStatusBadge(b)}
       </div>
       <div class="report-desc">${b.message}</div>
+      ${b.failed > 0 ? `<div class="empty-state">Delivery failed: ${(b.failureReasons || []).join(" ") || "unknown error"}</div>` : ""}
     </div>
   `).join("");
+}
+
+function broadcastStatusBadge(b) {
+  if (b.recipientCount === 0) return `<span class="category-badge other">No subscribers</span>`;
+  if (b.simulated > 0) return `<span class="category-badge other">${b.simulated} recipient${b.simulated === 1 ? "" : "s"} (simulated - no Twilio configured)</span>`;
+  if (b.failed > 0 && b.delivered === 0) return `<span class="category-badge attack_in_progress">${b.failed} failed to deliver</span>`;
+  if (b.failed > 0) return `<span class="category-badge business_targeted">${b.delivered} delivered, ${b.failed} failed</span>`;
+  return `<span class="category-badge delivered">${b.delivered} delivered</span>`;
 }
 
 document.getElementById("factCheckForm").addEventListener("submit", async (e) => {
